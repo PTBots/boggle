@@ -1,0 +1,4 @@
+venv/
+__pycache__
+/static/app.js
+/static/app2.js
