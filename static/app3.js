@@ -1,23 +1,12 @@
-$(function(){
-    var TIMER = $('#timer')
-
-    let decreaseTime = (setInterval(function() {
-        let currTime = Number(TIMER.text())
-        currTime--
-        if (currTime <= 0){
-            clearInterval(decreaseTime)
-        }
-        TIMER.text(currTime)
-    }, 1000))
-})
-
 class BoggleGame {
     constructor(boardId) {
         this.score = 0;
         this.words = new Set();
         this.board = $("#" + boardId);
+        this.myTimer = $("#timer", this.board);
 
-        $(".add-word", this.board).on("submit", this.handleSubmit.bind(this));
+        $("#boggle", this.board).on("click", this.handleSubmit.bind(this));
+        this.initTimer();
     }
 
     addWord(word) {
@@ -35,6 +24,19 @@ class BoggleGame {
             .addClass(`msg ${cls}`);
     }
 
+    initTimer() {
+        let time = 60;
+        this.myTimer.text(time);
+        const intervalValue = setInterval(() => {
+            time = time - 1;
+            this.myTimer.text(time);
+            if (time == 0) {
+                clearInterval(intervalValue);
+                this.finalScore();
+            }
+        }, 1000);
+    }
+
     async handleSubmit(e) {
         e.preventDefault();
         const $word = $(".word", this.board);
@@ -47,7 +49,7 @@ class BoggleGame {
             return;
         }
 
-        //match word to database
+        //match word to database and raise appropiate response
         const resp = await axios.get("/check-word", {params: {word: word}});
         if (resp.data.result === "not-word") {
             this.addMessage(`${word} is not a word`, "err");
@@ -64,6 +66,7 @@ class BoggleGame {
     }
 
     async finalScore() {
+        $("#boggle", this.board).prop("onclick", null).off("click");
         $(".add-word", this.board).hide();
         const resp = await axios.post("/post-score", { score: this.score });
         if (resp.data.brokeRecord) {
